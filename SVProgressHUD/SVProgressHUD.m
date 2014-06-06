@@ -206,8 +206,14 @@ static const CGFloat SVProgressHUDParallaxDepthPoints = 10;
         SVProgressHUDBackgroundColor = [UIColor whiteColor];
         SVProgressHUDForegroundColor = [UIColor blackColor];
         SVProgressHUDFont = [UIFont preferredFontForTextStyle:UIFontTextStyleSubheadline];
-        SVProgressHUDSuccessImage = [[UIImage imageNamed:@"SVProgressHUD.bundle/success"] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
-        SVProgressHUDErrorImage = [[UIImage imageNamed:@"SVProgressHUD.bundle/error"] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+
+        SVProgressHUDSuccessImage = [UIImage imageNamed:@"SVProgressHUD.bundle/success"];
+        if ( [SVProgressHUDSuccessImage respondsToSelector:@selector(imageWithRenderingMode:)] )
+            SVProgressHUDSuccessImage = [SVProgressHUDSuccessImage imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+        SVProgressHUDErrorImage = [UIImage imageNamed:@"SVProgressHUD.bundle/error"];
+        if ( [SVProgressHUDErrorImage respondsToSelector:@selector(imageWithRenderingMode:)] )
+            SVProgressHUDErrorImage = [SVProgressHUDErrorImage imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+        
         SVProgressHUDRingThickness = 4;
     }
 	
@@ -264,13 +270,19 @@ static const CGFloat SVProgressHUDParallaxDepthPoints = 10;
     
     if(string) {
         CGSize constraintSize = CGSizeMake(200, 300);
-        CGRect stringRect = [string boundingRectWithSize:constraintSize
-                                                 options:(NSStringDrawingUsesFontLeading|NSStringDrawingTruncatesLastVisibleLine|NSStringDrawingUsesLineFragmentOrigin)
-                                              attributes:@{NSFontAttributeName: self.stringLabel.font}
-                                                 context:NULL];
-        stringWidth = stringRect.size.width;
-        stringHeight = ceil(stringRect.size.height);
-        
+        /* fix compatility for iOS 6 & 7 */
+        if ( [string respondsToSelector:@selector(boundingRectWithSize:options:attributes:context:)] ) {
+            CGRect stringRect = [string boundingRectWithSize:constraintSize
+                                                     options:(NSStringDrawingUsesFontLeading|NSStringDrawingTruncatesLastVisibleLine|NSStringDrawingUsesLineFragmentOrigin)
+                                                  attributes:@{NSFontAttributeName: self.stringLabel.font}
+                                                     context:NULL];
+            stringWidth = stringRect.size.width;
+            stringHeight = ceil(stringRect.size.height);
+        }
+        else {
+            stringWidth = constraintSize.width-60;
+            stringHeight = self.stringLabel.frame.size.height+25;
+        }
         if (imageUsed)
             hudHeight = stringAndImageHeightBuffer + stringHeight;
         else
@@ -761,8 +773,10 @@ static const CGFloat SVProgressHUDParallaxDepthPoints = 10;
         effectY.minimumRelativeValue = @(-SVProgressHUDParallaxDepthPoints);
         effectY.maximumRelativeValue = @(SVProgressHUDParallaxDepthPoints);
         
-        [_hudView addMotionEffect: effectX];
-        [_hudView addMotionEffect: effectY];
+        if ( [_hudView respondsToSelector:@selector(addMotionEffect:)] ) {
+            [_hudView addMotionEffect: effectX];
+            [_hudView addMotionEffect: effectY];
+        }
         
         [self addSubview:_hudView];
     }
